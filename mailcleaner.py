@@ -3,6 +3,8 @@ import re
 import zlib
 
 
+
+
 # connecting to the database index.sqlite where cleaned up data will be stored.
 conn = sqlite3.connect('I:\\Python\\mail spider\\index.sqlite')
 cur = conn.cursor()
@@ -12,6 +14,8 @@ cur.execute('''DROP TABLE IF EXISTS Messages''')
 cur.execute('''DROP TABLE IF EXISTS Senders''')
 cur.execute('''DROP TABLE IF EXISTS Subjects''')
 cur.execute('''DROP TABLE IF EXISTS Replies''')
+
+
 
 
 # Creating the table Messages with id, guid, time, sender_id, subject_id, header, body as columns
@@ -32,9 +36,13 @@ cur.execute('''CREATE TABLE IF NOT EXISTS Replies
             (from_id INTEGER, to_id INTEGER)''')
 
 
+
+
 # Connecting to content.sqlite with different cursor in read only mode to avoid accidental alteration.
 conn_1 = sqlite3.connect('file:I:\\Python\\mail spider\\content.sqlite?mode=ro', uri=True)
 cur_1 = conn_1.cursor()
+
+
 
 
 # reading data from content.sqlite to operate on
@@ -60,16 +68,23 @@ for message_row in cur_1:
     guid = x[0]
     
     
+    
+    
     # Counting and printing every 10th row.
     count += 1
     
-    if count % 10 == 0 : print(message_row[1], sender, subject)
+    if count % 10 == 0 : 
+        print(message_row[1], sender, subject)
+    
+    
     
     
     # Getting the id's of sender, subject, and guid from their respective dictionaries, and if there is no value fount, then default=None is returned.
     sender_id = senders.get(sender,None)
     subject_id = subjects.get(subject,None)
     guid_id = guids.get(guid,None)
+    
+    
     
     
     # If sender_id is None, that is, there is no entry nether in senders dictionary nor in senders table in index.sqlite. so we insert the current sender into the table and get its id.
@@ -93,6 +108,8 @@ for message_row in cur_1:
             break
    
     
+    
+    
     # Same as sender_id. if subject_id is None, then the subject is inserted into table Subjects in index.sqlite and the its id is extracted.    
     # Also fills the Subjects table in index.sqlite.
     if subject_id is None:
@@ -111,6 +128,8 @@ for message_row in cur_1:
             break
   
     
+    
+    
     # Inserting guid, time, sender_id, subject_id, header, and body into Messages table of index.sqlite. header and body are compressed using zlib library.     
     # Also fills the Messages table in index.sqlite.
     cur.execute('''INSERT OR IGNORE INTO Messages (guid, time, sender_id, subject_id, header, body)
@@ -119,8 +138,10 @@ for message_row in cur_1:
     
     conn.commit()
     
+    
     # After inserting the current data into the table, now we can extract the its id to get the guid_id.
-    cur.execute('SELECT id FROM Messages WHERE guid=? LIMIT 1', (guid,))       
+    cur.execute('SELECT id FROM Messages WHERE guid=? LIMIT 1', (guid,))  
+         
     try: 
         row = cur.fetchone()
         guid_id = row[0]
@@ -130,6 +151,8 @@ for message_row in cur_1:
             print(f'unable to retrieve ID for guid, error : {error}')
             break
   
+    
+    
         
 # Reading all headers from Messages table in content.sqlite to extract the 'sent to' email.
 send_to = None
@@ -148,13 +171,18 @@ for msg_row in cur_1:
         send_to = x[0]
     
     
+    
+    
     # Inserting the ids from senders dictionaries into Replies table in index.sqlite. 
     cur.execute('INSERT OR IGNORE INTO Replies (from_id, to_id) VALUES (?, ?)',
                 (senders.get(msg_row[1],0), senders.get(send_to, 0)))
     
     conn.commit()
     
+    
     print('completed Replies table.')
+
+
 
 
 # Closing connection to content.sqlite and index.sqlite databases. 
